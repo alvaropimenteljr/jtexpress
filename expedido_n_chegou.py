@@ -38,7 +38,7 @@ turno = questionary.select(
     ]
 ).ask()
 
-print(f"\nObrigado, {registrante}! Iniciando o robô para o turno {turno}...\n")
+print(f"\nObrigado, {registrante}! Iniciando a automação para o turno {turno}...\n")
 
 
 # --- 1. CONFIGURAÇÃO DAS PASTAS E PARÂMETROS ---
@@ -76,7 +76,7 @@ def carregar_planilhas_da_pasta(caminho_pasta, extensao_arquivo):
 
 def enviar_para_sheets(dataframe_para_enviar):
     try:
-        print("\n[PASSO 6 de 7] Conectando ao Google Sheets...")
+        print("\n[PASSO 6 de 7] Conectando ao Sheets...")
         scopes = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
         creds = Credentials.from_service_account_file(ARQUIVO_DE_CREDENCIAL, scopes=scopes)
         client = gspread.authorize(creds)
@@ -96,7 +96,7 @@ def enviar_para_sheets(dataframe_para_enviar):
             worksheet.append_rows(dados_para_adicionar, value_input_option='USER_ENTERED')
         print(f"SUCESSO: {len(dataframe_para_enviar)} pedidos foram adicionados à planilha.")
     except Exception as e:
-        print(f"\nOcorreu um erro inesperado ao conectar com o Google Sheets: {e}")
+        print(f"\nOcorreu um erro inesperado ao conectar com o Sheets: {e}")
 
 def arquivar_arquivos_processados(arquivos_pedidos, arquivos_gb):
     try:
