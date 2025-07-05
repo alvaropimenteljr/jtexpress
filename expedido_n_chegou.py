@@ -7,7 +7,7 @@ import gspread
 from google.oauth2.service_account import Credentials
 import numpy as np
 import shutil
-import questionary # <-- Biblioteca para menus interativos
+import questionary 
 
 # --- DICIONÁRIO DE TRADUÇÃO DE ESTADOS (PARA O MAPA NO LOOKER) ---
 mapa_estados = {
@@ -186,12 +186,12 @@ else:
             df_consolidado_local.to_excel(caminho_consolidado_local, index=False)
             print(f"    -> Arquivo consolidado local 'consolidado_geral.xlsx' salvo.")
 
-            # [PASSO 6] Envio para o Google Sheets
+            # [PASSO 6] Enviar para o Sheets
             enviar_para_sheets(df_para_sheets)
         else:
             print("  -> Nenhum resultado a ser salvo ou enviado.")
 
-# [PASSO 7] Arquivamento dos arquivos de entrada
+# [PASSO 7] arquivamento dos arquivos de entrada
 if lista_arquivos_pedidos or lista_arquivos_gb:
     arquivar_arquivos_processados(lista_arquivos_pedidos, lista_arquivos_gb)
 
