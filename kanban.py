@@ -8,46 +8,36 @@ from ..models import db, Veiculo, VeiculoHistorico
 
 kanban_bp = Blueprint('kanban', __name__)
 
-#   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #
-
-# --- Rotas Principais da Aplicação (sem alterações na lógica interna) ---
-@kanban_bp.route('/')
+ 
+ @kanban_bp.route('/')
 @login_required()
 def portal():
     return render_template('portal.html')
 
-#   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #
-
-# ROTA DO KANBAN
-
+ 
+ 
 @kanban_bp.route('/kanban')
 @login_required()
 def kanban():
     """
     Rota para exibir o Kanban de Veículos com nova ordenação.
     """
-    # --- INÍCIO DA CORREÇÃO NA ORDENAÇÃO ---
-    # Define a ordem numérica para os status para agrupar os resultados
-    status_order = case(
+      status_order = case(
         (Veiculo.status == 'AGUARDANDO', 1),
         (Veiculo.status == 'EM_PROCESSO', 2),
         (Veiculo.status == 'FINALIZADO', 3),
         else_=4
     )
 
-    # Nova query com ordenação simplificada e compatível com SQLite
-    veiculos = Veiculo.query.order_by(
+     veiculos = Veiculo.query.order_by(
         status_order,  # 1. Agrupa por status
         Veiculo.data.asc(), # 2. Ordena por data de criação (mais antigo primeiro) para 'Aguardando'
         Veiculo.hora_inicio.asc(), # 3. Ordena por hora de início para 'Em Processo'
         desc(Veiculo.horario_atualizacao) # 4. Ordena por finalização (mais novo primeiro) para 'Finalizado'
     ).all()
-    # --- FIM DA CORREÇÃO NA ORDENAÇÃO ---
+ 
 
-
-    # --- Lógica de Contagem (permanece a mesma) ---
-    # ... (o resto da função continua exatamente igual)
-    aguardando_count = 0
+      aguardando_count = 0
     em_processo_count = 0
     finalizados_count = 0
     processo_ok = 0
@@ -101,18 +91,15 @@ def kanban():
                            kanban_counts=kanban_counts, 
                            processo_contadores=processo_contadores)
 
-#   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #
-
-#ROTA PARA ADICIONAR VEICULO
-
+ 
+ 
 @kanban_bp.route('/adicionar_veiculo', methods=['GET', 'POST'])
 @login_required(roles=['ADMIN', 'T1', 'T2', 'T3'])
 def adicionar_veiculo():
     if request.method == 'POST':
         form_data = request.form.to_dict()
 
-        # Validação para Tipo de Veículo
-        tipo_veiculo_selecionado = form_data.get('tipo_veiculo')
+         tipo_veiculo_selecionado = form_data.get('tipo_veiculo')
         veiculo_final = ''
         if tipo_veiculo_selecionado == 'Outro':
             veiculo_final = form_data.get('tipo_veiculo_outro', '').strip()
@@ -125,8 +112,7 @@ def adicionar_veiculo():
             flash('ERRO: Por favor, selecione um tipo de veículo válido.', 'error')
             return render_template('adicionar_veiculo.html', form_data=form_data)
 
-        # --- NOVA VALIDAÇÃO PARA TIPO DE CARGA ---
-        tipo_carga_selecionado = form_data.get('tipo_carga')
+         tipo_carga_selecionado = form_data.get('tipo_carga')
         carga_final = ''
         if tipo_carga_selecionado == 'Outra':
             carga_final = form_data.get('tipo_carga_outra', '').strip()
@@ -138,8 +124,7 @@ def adicionar_veiculo():
         else:
             flash('ERRO: Por favor, selecione um tipo de carga válido.', 'error')
             return render_template('adicionar_veiculo.html', form_data=form_data)
-        # --- FIM DA VALIDAÇÃO ---
-
+ 
         campos_obrigatorios = ['placa', 'origem', 'turno', 'id_viagem', 'data_planejada', 'data_checkin', 'hora_real_chegada', 'volumetria_sistematica', 'percent_ocupacao', 'rede_contencao', 'doca']
         for campo in campos_obrigatorios:
             if not form_data.get(campo):
@@ -147,14 +132,12 @@ def adicionar_veiculo():
                 return render_template('adicionar_veiculo.html', form_data=form_data)
 
         placa = form_data.get('placa', '').upper().strip()
-        # ... (resto das validações)
-        placa_pattern = re.compile(r'^[A-Z]{3}\d[A-Z\d]\d{2}$')
+         placa_pattern = re.compile(r'^[A-Z]{3}\d[A-Z\d]\d{2}$')
         if not placa_pattern.match(placa.replace('-', '')):
             flash('ERRO: Formato de placa inválido.', 'error')
             return render_template('adicionar_veiculo.html', form_data=form_data)
 
-        # ... (código existente para validação de turno, doca, volumetria, etc.)
-        try:
+         try:
             volumetria = int(form_data.get('volumetria_sistematica'))
             ocupacao = int(form_data.get('percent_ocupacao'))
             if not (0 <= ocupacao <= 100):
@@ -201,10 +184,8 @@ def adicionar_veiculo():
 
     return render_template('adicionar_veiculo.html', form_data={})
 
-#   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #
-
-#editar veiculo
-@kanban_bp.route('/editar_veiculo/<int:veiculo_id>', methods=['GET', 'POST'])
+ 
+ @kanban_bp.route('/editar_veiculo/<int:veiculo_id>', methods=['GET', 'POST'])
 @login_required(roles=['ADMIN', 'T1', 'T2', 'T3'])
 def editar_veiculo(veiculo_id):
     veiculo = Veiculo.query.get_or_404(veiculo_id)
@@ -212,8 +193,7 @@ def editar_veiculo(veiculo_id):
         flash('Você não tem permissão para editar um veículo finalizado.', 'danger')
         return redirect(url_for('kanban.kanban'))
     if request.method == 'POST':
-        # Validação para Tipo de Veículo
-        tipo_veiculo_selecionado = request.form.get('tipo_veiculo')
+         tipo_veiculo_selecionado = request.form.get('tipo_veiculo')
         veiculo_final = ''
         if tipo_veiculo_selecionado == 'Outro':
             veiculo_final = request.form.get('tipo_veiculo_outro', '').strip()
@@ -226,8 +206,7 @@ def editar_veiculo(veiculo_id):
             flash('ERRO: Por favor, selecione um tipo de veículo válido.', 'error')
             return render_template('editar_veiculo.html', veiculo=veiculo)
 
-        # --- NOVA VALIDAÇÃO PARA TIPO DE CARGA ---
-        tipo_carga_selecionado = request.form.get('tipo_carga')
+         tipo_carga_selecionado = request.form.get('tipo_carga')
         carga_final = ''
         if tipo_carga_selecionado == 'Outra':
             carga_final = request.form.get('tipo_carga_outra', '').strip()
@@ -239,11 +218,9 @@ def editar_veiculo(veiculo_id):
         else:
             flash('ERRO: Por favor, selecione um tipo de carga válido.', 'error')
             return render_template('editar_veiculo.html', veiculo=veiculo)
-        # --- FIM DA VALIDAÇÃO ---
-        
+         
         placa = request.form.get('placa', '').upper().strip()
-        # ... (resto das validações)
-        placa_pattern = re.compile(r'^[A-Z]{3}\d[A-Z\d]\d{2}$')
+         placa_pattern = re.compile(r'^[A-Z]{3}\d[A-Z\d]\d{2}$')
         if not placa_pattern.match(placa.replace('-', '')):
             flash('ERRO: Formato de placa inválido.', 'error')
             return render_template('editar_veiculo.html', veiculo=veiculo)
@@ -277,10 +254,8 @@ def editar_veiculo(veiculo_id):
             return render_template('editar_veiculo.html', veiculo=veiculo)
     return render_template('editar_veiculo.html', veiculo=veiculo)
 
-#   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #
-
-#excluir veiculo
-@kanban_bp.route('/excluir_veiculo/<int:veiculo_id>', methods=['POST'])
+ 
+ @kanban_bp.route('/excluir_veiculo/<int:veiculo_id>', methods=['POST'])
 @login_required(roles=['ADMIN', 'T1', 'T2', 'T3'])
 def excluir_veiculo(veiculo_id):
     veiculo = Veiculo.query.get_or_404(veiculo_id)
@@ -297,11 +272,9 @@ def excluir_veiculo(veiculo_id):
         flash('Apenas veículos no status "Aguardando" podem ser excluídos.', 'warning')
     return redirect(url_for('kanban.kanban'))
 
-#   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #
+ 
 
-
-#ATUALIZAR_STATUS
-@kanban_bp.route('/atualizar_status', methods=['POST'])
+ @kanban_bp.route('/atualizar_status', methods=['POST'])
 @login_required(roles=['ADMIN', 'T1', 'T2', 'T3'])
 def atualizar_status():
     data = request.get_json()
@@ -312,8 +285,7 @@ def atualizar_status():
     current_status = veiculo.status
     novo_status = data['novo_status'].replace('column-', '')
 
-    # Lógica de transição
-    if current_status == 'AGUARDANDO' and novo_status == 'EM_PROCESSO':
+     if current_status == 'AGUARDANDO' and novo_status == 'EM_PROCESSO':
         veiculo.hora_inicio = datetime.now()
         veiculo.status = 'EM_PROCESSO'
     elif current_status == 'EM_PROCESSO' and novo_status == 'FINALIZADO':
@@ -339,8 +311,7 @@ def atualizar_status():
 
     db.session.commit()
     
-    # Lógica para definir a classe de cor (status) do card finalizado
-    finalization_class = 'status-ok'
+     finalization_class = 'status-ok'
     if veiculo.status == 'FINALIZADO' and veiculo.tempo_descarga:
         try:
             horas_str = veiculo.tempo_descarga.split('h')[0].strip()
@@ -349,8 +320,7 @@ def atualizar_status():
             elif total_hours >= 2: finalization_class = 'status-alerta'
         except (ValueError, IndexError): pass
 
-    # Serializa os dados do veículo em um dicionário para enviar como JSON
-    veiculo_data = {
+     veiculo_data = {
         'id': veiculo.id,
         'placa': veiculo.placa,
         'origem': veiculo.origem,
@@ -370,20 +340,15 @@ def atualizar_status():
     return jsonify({'success': True, 'veiculo': veiculo_data})
 
 
-#   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #
-
-#arquivar_manualmente
-@kanban_bp.route('/arquivar_manualmente', methods=['POST'])
+ 
+ @kanban_bp.route('/arquivar_manualmente', methods=['POST'])
 @login_required()
 def arquivar_manualmente():
-    # Pega o turno atual
-    turno_atual = get_shift_name_from_hour(datetime.now().hour)
+     turno_atual = get_shift_name_from_hour(datetime.now().hour)
     
-    # Busca todos os veículos com status FINALIZADO
-    veiculos_finalizados = Veiculo.query.filter_by(status='FINALIZADO').all()
+     veiculos_finalizados = Veiculo.query.filter_by(status='FINALIZADO').all()
     
-    # Filtra para arquivar apenas os de turnos anteriores
-    veiculos_a_arquivar = [
+     veiculos_a_arquivar = [
         v for v in veiculos_finalizados if v.turno_finalizacao != turno_atual
     ]
 
@@ -416,17 +381,14 @@ def arquivar_manualmente():
     log_action('ARQUIVAR_VEICULOS', f"{len(veiculos_a_arquivar)} veículos foram arquivados manualmente.")
     return redirect(url_for('kanban.kanban'))
 
-#   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #
-
+ 
 
 @kanban_bp.route('/api/veiculo/<int:veiculo_id>')
 @login_required()
 def get_veiculo_details(veiculo_id):
-    # Busca o veículo no banco de dados. Se não encontrar, retorna erro 404.
-    veiculo = Veiculo.query.get_or_404(veiculo_id)
+     veiculo = Veiculo.query.get_or_404(veiculo_id)
     
-    # Cria um dicionário com todos os dados que queremos mostrar
-    details = {
+     details = {
         'placa': veiculo.placa,
         'origem': veiculo.origem,
         'turno': veiculo.turno,
@@ -441,20 +403,16 @@ def get_veiculo_details(veiculo_id):
         'rede_contencao': veiculo.rede_contencao,
         'doca': veiculo.doca,
         'observacao': veiculo.observacao,
-        # Adiciona também informações de status, se relevante
-        'status': veiculo.status,
+         'status': veiculo.status,
         'hora_inicio': veiculo.hora_inicio.strftime('%d/%m/%Y %H:%M:%S') if veiculo.hora_inicio else 'N/A',
         'horario_atualizacao': veiculo.horario_atualizacao.strftime('%d/%m/%Y %H:%M:%S') if veiculo.horario_atualizacao else 'N/A',
         'tempo_descarga': veiculo.tempo_descarga
     }
     
-    # Retorna os dados como JSON
-    return jsonify(details)
+     return jsonify(details)
 
-#   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #
-
-#Status da doca
-@kanban_bp.route('/api/dock_status')
+ 
+ @kanban_bp.route('/api/dock_status')
 @login_required()
 def api_dock_status():
     lista_docas = list(range(1, 31)) + list(range(61, 91))
@@ -469,9 +427,7 @@ def api_dock_status():
             timing_status = None
             hora_inicio_iso = None # Inicializa a variável
             
-            # --- INÍCIO DA CORREÇÃO ---
-            # Define o tempo de início para veículos EM PROCESSO
-            if veiculo.status == 'EM_PROCESSO' and veiculo.hora_inicio:
+              if veiculo.status == 'EM_PROCESSO' and veiculo.hora_inicio:
                 try:
                     duration = datetime.now() - veiculo.hora_inicio
                     hora_inicio_iso = veiculo.hora_inicio.isoformat()
@@ -484,11 +440,9 @@ def api_dock_status():
                 except TypeError:
                     timing_status = None
             
-            # ADICIONADO: Define o tempo de início para veículos AGUARDANDO (usa a data de criação)
-            elif veiculo.status == 'AGUARDANDO' and veiculo.data:
+             elif veiculo.status == 'AGUARDANDO' and veiculo.data:
                 hora_inicio_iso = veiculo.data.isoformat()
-            # --- FIM DA CORREÇÃO ---
-
+ 
             dock_data[cleaned_dock_str] = {
                 'status': veiculo.status.upper(), 
                 'placa': veiculo.placa,
@@ -499,8 +453,7 @@ def api_dock_status():
     
     return jsonify(dock_data)
 
-#   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #
-
+ 
 
 @kanban_bp.route('/api/status_counts')
 @login_required()
@@ -510,29 +463,25 @@ def get_status_counts():
     
     start_shift, end_shift = get_shift_boundaries(now, current_shift_name) # Calcula os limites corretos para 'now' e 'current_shift_name'
 
-    # --- ADICIONE ESTES PRINTS PARA DEPURAR OS LIMITES DE TEMPO E AS CONTAGENS ---
-    print(f"\n--- API STATUS COUNTS DEBUG ---")
+     print(f"\n--- API STATUS COUNTS DEBUG ---")
     print(f"Hora Atual da Requisição: {now}")
     print(f"Turno Atual Detectado: {current_shift_name}")
     print(f"Limites do Turno: {start_shift} (Início) a {end_shift} (Fim)")
     
-    # Contar FINALIZADOS da tabela principal (ainda não arquivados)
-    finished_in_current_table = Veiculo.query.filter(
+     finished_in_current_table = Veiculo.query.filter(
         Veiculo.status == 'FINALIZADO',
         Veiculo.horario_atualizacao >= start_shift,
         Veiculo.horario_atualizacao < end_shift
     ).count()
 
-    # Contar FINALIZADOS da tabela de histórico (já arquivados)
-    finished_in_history_table = 0
+     finished_in_history_table = 0
     if start_shift and end_shift: # Garante que os limites são válidos antes de consultar o histórico
         finished_in_history_table = VeiculoHistorico.query.filter(
             VeiculoHistorico.horario_atualizacao >= start_shift,
             VeiculoHistorico.horario_atualizacao < end_shift
         ).count()
     
-    # Soma os finalizados das duas tabelas para o turno atual
-    finished_in_shift_count = Veiculo.query.filter_by(status='FINALIZADO').count()
+     finished_in_shift_count = Veiculo.query.filter_by(status='FINALIZADO').count()
 
     waiting_vehicles_count = Veiculo.query.filter_by(status='AGUARDANDO').count()
     in_process_vehicles_count = Veiculo.query.filter_by(status='EM_PROCESSO').count()
@@ -546,11 +495,9 @@ def get_status_counts():
         'in_process_count': in_process_vehicles_count
     })
 
-# Em app.py, adicione estas duas funções
+ 
 
-
-# --- Rotas e Funções de Tema (sem alterações) ---
-@kanban_bp.route('/set-theme/<theme>')
+ @kanban_bp.route('/set-theme/<theme>')
 def set_theme(theme):
     session['theme'] = theme
     return jsonify(success=True)
@@ -562,8 +509,7 @@ def list_vehicles():
     Lista todos os veículos ativos e históricos com filtros.
     Agora, o filtro de data padrão é o turno atual.
     """
-    # ... (código existente para pegar filtros da requisição, se houver)
-    data_inicio_str = request.args.get('data_inicio')
+     data_inicio_str = request.args.get('data_inicio')
     data_fim_str = request.args.get('data_fim')
     placa_filtro = request.args.get('placa')
     status_filtro = request.args.get('status')
@@ -571,8 +517,7 @@ def list_vehicles():
     tipo_veiculo_filtro = request.args.get('tipo_veiculo')
     turno_filtro = request.args.get('turno') # Novo filtro para turno
 
-    # Calcular o turno atual como padrão se nenhum filtro de data for fornecido
-    default_data_inicio_str = ''
+     default_data_inicio_str = ''
     default_data_fim_str = ''
     if not data_inicio_str and not data_fim_str:
         now = datetime.now()
@@ -581,8 +526,7 @@ def list_vehicles():
         default_data_inicio_str = start_shift.strftime('%d/%m/%Y %H:%M:%S') if start_shift else ''
         default_data_fim_str = end_shift.strftime('%d/%m/%Y %H:%M:%S') if end_shift else ''
         
-        # Usar os defaults para a query se não houver filtros explícitos
-        data_inicio_str = default_data_inicio_str
+         data_inicio_str = default_data_inicio_str
         data_fim_str = default_data_fim_str
 
     data_inicio = None
@@ -602,20 +546,17 @@ def list_vehicles():
             data_fim = None # Resetar para não usar data inválida
 
 
-    # Construir a query base para veículos ativos
-    query_ativos = Veiculo.query
+     query_ativos = Veiculo.query
     query_historico = VeiculoHistorico.query
 
-    # Aplicar filtros de data (se definidos, seja por padrão ou pelo usuário)
-    if data_inicio:
+     if data_inicio:
         query_ativos = query_ativos.filter(Veiculo.data >= data_inicio)
         query_historico = query_historico.filter(VeiculoHistorico.data >= data_inicio)
     if data_fim:
         query_ativos = query_ativos.filter(Veiculo.data <= data_fim)
         query_historico = query_historico.filter(VeiculoHistorico.data <= data_fim)
 
-    # ... (restante da aplicação de filtros de placa, status, motorista, tipo_veiculo, etc.)
-    if placa_filtro:
+     if placa_filtro:
         query_ativos = query_ativos.filter(Veiculo.placa.ilike(f'%{placa_filtro}%'))
         query_historico = query_historico.filter(VeiculoHistorico.placa.ilike(f'%{placa_filtro}%'))
     if status_filtro and status_filtro != 'todos':
@@ -628,8 +569,7 @@ def list_vehicles():
         query_ativos = query_ativos.filter(Veiculo.tipo_veiculo == tipo_veiculo_filtro)
         query_historico = query_historico.filter(VeiculoHistorico.tipo_veiculo == tipo_veiculo_filtro)
     
-    # Aplicar filtro de turno, se houver (para veículos ativos e históricos)
-    if turno_filtro and turno_filtro != 'todos':
+     if turno_filtro and turno_filtro != 'todos':
         query_ativos = query_ativos.filter(Veiculo.turno == turno_filtro)
         query_historico = query_historico.filter(VeiculoHistorico.turno == turno_filtro)
 
@@ -637,11 +577,9 @@ def list_vehicles():
     veiculos = query_ativos.order_by(Veiculo.data.desc()).all()
     historico = query_historico.order_by(VeiculoHistorico.data.desc()).all()
 
-    # Combinar e ordenar os resultados
-    todos_veiculos = sorted(veiculos + historico, key=lambda x: x.data, reverse=True)
+     todos_veiculos = sorted(veiculos + historico, key=lambda x: x.data, reverse=True)
 
-    # ... (restante do código para renderizar o template)
-    return render_template(
+     return render_template(
         'list_vehicles.html', # Ou o nome do seu template de listagem
         veiculos=todos_veiculos,
         placa_filtro=placa_filtro,
@@ -651,5 +589,4 @@ def list_vehicles():
         turno_filtro=turno_filtro, # Passa o filtro de turno para o template
         default_data_inicio=default_data_inicio_str, # Passa as datas padrão
         default_data_fim=default_data_fim_str,       # Passa as datas padrão
-        # ... outras variáveis que você já passa
-    )
+     )
