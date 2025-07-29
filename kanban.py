@@ -241,7 +241,7 @@ def editar_veiculo(veiculo_id):
             veiculo.hora_real_chegada = request.form.get('hora_real_chegada')
             veiculo.id_viagem = request.form.get('id_viagem')
             veiculo.tipo_veiculo = veiculo_final
-            veiculo.tipo_carga = carga_final # USA O VALOR FINAL VALIDADO
+            veiculo.tipo_carga = carga_final 
             veiculo.rede_contencao = request.form.get('rede_contencao')
             veiculo.observacao = request.form.get('observacao')
             log_action('EDITAR_VEICULO', f"Veículo placa '{placa}' foi editado.") 
@@ -307,7 +307,7 @@ def atualizar_status():
     else:
         return jsonify({'success': False, 'message': 'Transição de status inválida'}), 400
     
-    log_action('ATUALIZAR_STATUS', f"Status do veículo '{veiculo.placa}' alterado de '{current_status}' para '{novo_status}'.") # ADICIONE AQUI
+    log_action('ATUALIZAR_STATUS', f"Status do veículo '{veiculo.placa}' alterado de '{current_status}' para '{novo_status}'.") 
 
     db.session.commit()
     
@@ -425,7 +425,7 @@ def api_dock_status():
         
         if cleaned_dock_str in dock_data:
             timing_status = None
-            hora_inicio_iso = None # Inicializa a variável
+            hora_inicio_iso = None 
             
               if veiculo.status == 'EM_PROCESSO' and veiculo.hora_inicio:
                 try:
@@ -447,7 +447,7 @@ def api_dock_status():
                 'status': veiculo.status.upper(), 
                 'placa': veiculo.placa,
                 'timing_status': timing_status,
-                'hora_inicio': hora_inicio_iso, # Agora envia o tempo de início para ambos os status
+                'hora_inicio': hora_inicio_iso, 
                 'veiculo_id': veiculo.id 
             }
     
@@ -461,7 +461,7 @@ def get_status_counts():
     now = datetime.now()
     current_shift_name = get_shift_name_from_hour(now.hour) # Pega o turno baseado na hora atual
     
-    start_shift, end_shift = get_shift_boundaries(now, current_shift_name) # Calcula os limites corretos para 'now' e 'current_shift_name'
+    start_shift, end_shift = get_shift_boundaries(now, current_shift_name) 
 
      print(f"\n--- API STATUS COUNTS DEBUG ---")
     print(f"Hora Atual da Requisição: {now}")
@@ -515,7 +515,7 @@ def list_vehicles():
     status_filtro = request.args.get('status')
     motorista_filtro = request.args.get('motorista')
     tipo_veiculo_filtro = request.args.get('tipo_veiculo')
-    turno_filtro = request.args.get('turno') # Novo filtro para turno
+    turno_filtro = request.args.get('turno') 
 
      default_data_inicio_str = ''
     default_data_fim_str = ''
@@ -535,7 +535,7 @@ def list_vehicles():
             data_inicio = datetime.strptime(data_inicio_str, '%d/%m/%Y %H:%M:%S')
         except ValueError:
             flash("Formato de data de início inválido. Ignorando filtro.", "warning")
-            data_inicio = None # Resetar para não usar data inválida
+            data_inicio = None #
 
     data_fim = None
     if data_fim_str:
@@ -580,7 +580,7 @@ def list_vehicles():
      todos_veiculos = sorted(veiculos + historico, key=lambda x: x.data, reverse=True)
 
      return render_template(
-        'list_vehicles.html', # Ou o nome do seu template de listagem
+        'list_vehicles.html', 
         veiculos=todos_veiculos,
         placa_filtro=placa_filtro,
         status_filtro=status_filtro,
